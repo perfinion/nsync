@@ -38,7 +38,7 @@ set (NSYNC_POSIX_SRC
 # Pick the include directory for the operating system.
 if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	include_directories ("${PROJECT_SOURCE_DIR}/platform/c++11")
-	add_definitions ("-DNSYNC_USE_CPP11_TIMEPOINT -DNSYNC_ATOMIC_CPP11")
+	set (NSYNC_CPP_DEFINITIONS NSYNC_USE_CPP11_TIMEPOINT NSYNC_ATOMIC_CPP11)
 	set (NSYNC_OS_CPP_SRC
 		"platform/c++11/src/per_thread_waiter.cc"
 		"platform/c++11/src/yield.cc"
@@ -47,14 +47,14 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	)
 	if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "WindowsX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/win32")
-		add_compile_options ("/TP")
+		set (NSYNC_CPP_FLAGS "/TP")
 		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			"platform/win32/src/clock_gettime.c"
 			"platform/win32/src/pthread_key_win32.cc"
 			${NSYNC_OS_CPP_SRC}
 		)
-		set (NSYNC_TEST_OS_SRC
+		set (NSYNC_TEST_OS_CPP_SRC
 			"platform/win32/src/start_thread.c"
 		)
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "DarwinX")
@@ -62,8 +62,8 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
 		# Some versions of MacOS, such as Sierra, require _DARWIN_C_SOURCE
 		# when including certin C++ standard header files, such as <mutex>.
-		add_definitions ("-D_DARWIN_C_SOURCE")
-		add_compile_options ("-std=c++11")
+		set (NSYNC_CPP_DEFINITIONS ${NSYNC_CPP_DEFINITIONS} _DARWIN_C_SOURCE)
+		set (NSYNC_CPP_FLAGS "-std=c++11")
 		set (NSYNC_OS_CPP_SRC
 			${NSYNC_OS_CPP_SRC}
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
@@ -76,7 +76,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
 		include_directories (BEFORE "${PROJECT_SOURCE_DIR}/platform/c++11.futex")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		add_compile_options ("-std=c++11")
+		set (NSYNC_CPP_FLAGS "-std=c++11")
 		set (NSYNC_OS_CPP_SRC
 			"platform/linux/src/nsync_semaphore_futex.c"
 			${NSYNC_OS_CPP_SRC}
@@ -86,7 +86,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		)
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "NetBSDX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		add_compile_options ("-std=c++11")
+		set (NSYNC_CPP_FLAGS "-std=c++11")
 		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
@@ -96,7 +96,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		)
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "FreeBSDX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		add_compile_options ("-std=c++11")
+		set (NSYNC_CPP_FLAGS "-std=c++11")
 		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
@@ -106,7 +106,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		)
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "OpenBSDX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		add_compile_options ("-std=c++11")
+		set (NSYNC_CPP_FLAGS "-std=c++11")
 		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
@@ -116,7 +116,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		)
 	else ()
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		add_compile_options ("-std=c++11")
+		set (NSYNC_CPP_FLAGS "-std=c++11")
 		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
@@ -282,7 +282,11 @@ set_target_properties(nsync_cpp PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR})
 
-SET_SOURCE_FILES_PROPERTIES (${NSYNC_CPP_SRC_COPY} PROPERTIES LANGUAGE CXX)
+target_compile_definitions(nsync_cpp PRIVATE ${NSYNC_CPP_DEFINITIONS})
+
+SET_SOURCE_FILES_PROPERTIES (${NSYNC_CPP_SRC_COPY}
+	PROPERTIES LANGUAGE CXX
+	COMPILE_FLAGS ${NSYNC_CPP_FLAGS})
 
 if (NSYNC_ENABLE_TESTS)
 	set (NSYNC_TEST_SRC
