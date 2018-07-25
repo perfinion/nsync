@@ -48,7 +48,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "WindowsX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/win32")
 		add_compile_options ("/TP")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			"platform/win32/src/clock_gettime.c"
 			"platform/win32/src/pthread_key_win32.cc"
@@ -64,7 +64,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		# when including certin C++ standard header files, such as <mutex>.
 		add_definitions ("-D_DARWIN_C_SOURCE")
 		add_compile_options ("-std=c++11")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			${NSYNC_OS_CPP_SRC}
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			"platform/posix/src/clock_gettime.c"
@@ -77,7 +77,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 		include_directories (BEFORE "${PROJECT_SOURCE_DIR}/platform/c++11.futex")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
 		add_compile_options ("-std=c++11")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			"platform/linux/src/nsync_semaphore_futex.c"
 			${NSYNC_OS_CPP_SRC}
 		)
@@ -87,7 +87,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "NetBSDX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
 		add_compile_options ("-std=c++11")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
 		)
@@ -97,7 +97,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "FreeBSDX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
 		add_compile_options ("-std=c++11")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
 		)
@@ -107,7 +107,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "OpenBSDX")
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
 		add_compile_options ("-std=c++11")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
 		)
@@ -117,7 +117,7 @@ if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
 	else ()
 		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
 		add_compile_options ("-std=c++11")
-		set (NSYNC_OS_SRC
+		set (NSYNC_OS_CPP_SRC
 			"platform/c++11/src/nsync_semaphore_mutex.cc"
 			${NSYNC_OS_CPP_SRC}
 		)
@@ -242,7 +242,7 @@ include_directories ("${PROJECT_SOURCE_DIR}/internal")
 
 include(GNUInstallDirs)
 
-set (NSYNC_SRC
+set (NSYNC_COMMON_SRC
 	"internal/common.c"
 	"internal/counter.c"
 	"internal/cv.c"
@@ -255,17 +255,34 @@ set (NSYNC_SRC
 	"internal/sem_wait.c"
 	"internal/time_internal.c"
 	"internal/wait.c"
-	${NSYNC_OS_SRC}
 )
-add_library (nsync ${NSYNC_SRC})
+
+add_library (nsync ${NSYNC_COMMON_SRC} ${NSYNC_OS_SRC})
 
 set_target_properties(nsync PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR})
 
-if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
-	SET_SOURCE_FILES_PROPERTIES (${NSYNC_SRC} PROPERTIES LANGUAGE CXX)
-endif ()
+
+foreach (s IN ITEMS ${NSYNC_COMMON_SRC} ${NSYNC_OS_CPP_SRC})
+	add_custom_command(
+		OUTPUT cpp/${s}
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/${s} cpp/${s}
+		DEPENDS ${PROJECT_SOURCE_DIR}/${s}
+	)
+
+	set (NSYNC_CPP_SRC_COPY ${NSYNC_CPP_SRC_COPY}
+		cpp/${s}
+	)
+endforeach (s)
+
+add_library (nsync_cpp ${NSYNC_CPP_SRC_COPY})
+
+set_target_properties(nsync_cpp PROPERTIES
+	VERSION ${PROJECT_VERSION}
+	SOVERSION ${PROJECT_VERSION_MAJOR})
+
+SET_SOURCE_FILES_PROPERTIES (${NSYNC_CPP_SRC_COPY} PROPERTIES LANGUAGE CXX)
 
 if (NSYNC_ENABLE_TESTS)
 	set (NSYNC_TEST_SRC
@@ -328,6 +345,10 @@ if (NSYNC_ENABLE_TESTS)
 endif ()
 
 install (TARGETS nsync
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development)
+
+install (TARGETS nsync_cpp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development)
 
