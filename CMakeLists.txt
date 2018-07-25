@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.12)
+cmake_minimum_required (VERSION 3.0)
 
 # nsync provides portable synchronization primitives, such as mutexes and
 # condition variables.
@@ -236,6 +236,8 @@ endif ()
 include_directories ("${PROJECT_SOURCE_DIR}/public")
 include_directories ("${PROJECT_SOURCE_DIR}/internal")
 
+include(GNUInstallDirs)
+
 set (NSYNC_SRC
 	"internal/common.c"
 	"internal/counter.c"
@@ -313,8 +315,8 @@ if (NSYNC_ENABLE_TESTS)
 endif ()
 
 install (TARGETS nsync
-	LIBRARY DESTINATION lib COMPONENT RuntimeLibraries
-	ARCHIVE DESTINATION lib COMPONENT Development)
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development)
 
 set (NSYNC_INCLUDES
 	"public/nsync.h"
@@ -333,5 +335,7 @@ set (NSYNC_INCLUDES
 )
 
 foreach (NSYNC_INCLUDE ${NSYNC_INCLUDES})
-	install (FILES ${NSYNC_INCLUDE} DESTINATION include COMPONENT Development)
+	install (FILES ${NSYNC_INCLUDE}
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+		COMPONENT Development)
 endforeach ()
