@@ -36,95 +36,102 @@ set (NSYNC_POSIX_SRC
 #    https://cmake.org/cmake/help/v3.1/policy/CMP0054.html
 
 # Pick the include directory for the operating system.
-if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
-	include_directories ("${PROJECT_SOURCE_DIR}/platform/c++11")
-	set (NSYNC_CPP_DEFINITIONS NSYNC_USE_CPP11_TIMEPOINT NSYNC_ATOMIC_CPP11)
-	set (NSYNC_OS_CPP_SRC
-		"platform/c++11/src/per_thread_waiter.cc"
-		"platform/c++11/src/yield.cc"
-		"platform/c++11/src/time_rep_timespec.cc"
-		"platform/c++11/src/nsync_panic.cc"
+set (NSYNC_CPP_DEFINITIONS NSYNC_USE_CPP11_TIMEPOINT NSYNC_ATOMIC_CPP11)
+set (NSYNC_OS_CPP_SRC
+	"platform/c++11/src/per_thread_waiter.cc"
+	"platform/c++11/src/yield.cc"
+	"platform/c++11/src/time_rep_timespec.cc"
+	"platform/c++11/src/nsync_panic.cc"
+)
+if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "WindowsX")
+	include_directories ("${PROJECT_SOURCE_DIR}/platform/win32")
+	set (NSYNC_CPP_FLAGS "/TP")
+
+	set (NSYNC_OS_SRC
+		${NSYNC_POSIX_SRC}
+		"platform/win32/src/clock_gettime.c"
+		"platform/win32/src/init_callback_win32.c"
+		"platform/win32/src/nanosleep.c"
+		"platform/win32/src/nsync_semaphore_win32.c"
+		"platform/win32/src/pthread_cond_timedwait_win32.c"
+		"platform/win32/src/pthread_key_win32.cc"
 	)
-	if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "WindowsX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/win32")
-		set (NSYNC_CPP_FLAGS "/TP")
-		set (NSYNC_OS_CPP_SRC
-			"platform/c++11/src/nsync_semaphore_mutex.cc"
-			"platform/win32/src/clock_gettime.c"
-			"platform/win32/src/pthread_key_win32.cc"
-			${NSYNC_OS_CPP_SRC}
-		)
-		set (NSYNC_TEST_OS_CPP_SRC
-			"platform/win32/src/start_thread.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "DarwinX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/macos")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		# Some versions of MacOS, such as Sierra, require _DARWIN_C_SOURCE
-		# when including certin C++ standard header files, such as <mutex>.
-		set (NSYNC_CPP_DEFINITIONS ${NSYNC_CPP_DEFINITIONS} _DARWIN_C_SOURCE)
-		set (NSYNC_CPP_FLAGS "-std=c++11")
-		set (NSYNC_OS_CPP_SRC
-			${NSYNC_OS_CPP_SRC}
-			"platform/c++11/src/nsync_semaphore_mutex.cc"
-			"platform/posix/src/clock_gettime.c"
-			"platform/posix/src/nsync_semaphore_mutex.c"
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/posix/src/start_thread.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
-		include_directories (BEFORE "${PROJECT_SOURCE_DIR}/platform/c++11.futex")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		set (NSYNC_CPP_FLAGS "-std=c++11")
-		set (NSYNC_OS_CPP_SRC
-			"platform/linux/src/nsync_semaphore_futex.c"
-			${NSYNC_OS_CPP_SRC}
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/posix/src/start_thread.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "NetBSDX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		set (NSYNC_CPP_FLAGS "-std=c++11")
-		set (NSYNC_OS_CPP_SRC
-			"platform/c++11/src/nsync_semaphore_mutex.cc"
-			${NSYNC_OS_CPP_SRC}
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/posix/src/start_thread.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "FreeBSDX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		set (NSYNC_CPP_FLAGS "-std=c++11")
-		set (NSYNC_OS_CPP_SRC
-			"platform/c++11/src/nsync_semaphore_mutex.cc"
-			${NSYNC_OS_CPP_SRC}
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/posix/src/start_thread.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "OpenBSDX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		set (NSYNC_CPP_FLAGS "-std=c++11")
-		set (NSYNC_OS_CPP_SRC
-			"platform/c++11/src/nsync_semaphore_mutex.cc"
-			${NSYNC_OS_CPP_SRC}
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/posix/src/start_thread.c"
-		)
-	else ()
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		set (NSYNC_CPP_FLAGS "-std=c++11")
-		set (NSYNC_OS_CPP_SRC
-			"platform/c++11/src/nsync_semaphore_mutex.cc"
-			${NSYNC_OS_CPP_SRC}
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/posix/src/start_thread.c"
-		)
-	endif ()
+	set (NSYNC_OS_CPP_SRC
+		${NSYNC_OS_CPP_SRC}
+		"platform/c++11/src/nsync_semaphore_mutex.cc"
+		"platform/win32/src/clock_gettime.c"
+		"platform/win32/src/pthread_key_win32.cc"
+	)
+elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "DarwinX")
+	include_directories ("${PROJECT_SOURCE_DIR}/platform/macos")
+	# Some versions of MacOS, such as Sierra, require _DARWIN_C_SOURCE
+	# when including certin C++ standard header files, such as <mutex>.
+	set (NSYNC_CPP_DEFINITIONS ${NSYNC_CPP_DEFINITIONS} _DARWIN_C_SOURCE)
+	set (NSYNC_POSIX ON)
+
+	set (NSYNC_OS_EXTRA_SRC
+		"platform/posix/src/clock_gettime.c"
+		"platform/posix/src/nsync_semaphore_mutex.c"
+	)
+	set (NSYNC_OS_CPP_SRC
+		${NSYNC_OS_CPP_SRC}
+		"platform/c++11/src/nsync_semaphore_mutex.cc"
+		"platform/posix/src/clock_gettime.c"
+		"platform/posix/src/nsync_semaphore_mutex.c"
+	)
+elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
+	set (NSYNC_POSIX ON)
+
+	set (NSYNC_OS_EXTRA_SRC
+		"platform/linux/src/nsync_semaphore_futex.c"
+	)
+	set (NSYNC_OS_CPP_SRC
+		"platform/linux/src/nsync_semaphore_futex.c"
+		${NSYNC_OS_CPP_SRC}
+	)
+elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "NetBSDX")
+	include_directories ("${PROJECT_SOURCE_DIR}/platform/netbsd")
+	set (NSYNC_POSIX ON)
+
+	set (NSYNC_OS_EXTRA_SRC
+		"platform/posix/src/nsync_semaphore_mutex.c"
+	)
+	set (NSYNC_OS_CPP_SRC
+		"platform/c++11/src/nsync_semaphore_mutex.cc"
+		${NSYNC_OS_CPP_SRC}
+	)
+elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "FreeBSDX")
+	include_directories ("${PROJECT_SOURCE_DIR}/platform/freebsd")
+	set (NSYNC_POSIX ON)
+
+	set (NSYNC_OS_EXTRA_SRC
+		"platform/posix/src/nsync_semaphore_mutex.c"
+	)
+	set (NSYNC_OS_CPP_SRC
+		"platform/c++11/src/nsync_semaphore_mutex.cc"
+		${NSYNC_OS_CPP_SRC}
+	)
+elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "OpenBSDX")
+	include_directories ("${PROJECT_SOURCE_DIR}/platform/openbsd")
+	set (NSYNC_POSIX ON)
+
+	set (NSYNC_OS_EXTRA_SRC
+		"platform/posix/src/nsync_semaphore_mutex.c"
+	)
+	set (NSYNC_OS_CPP_SRC
+		"platform/c++11/src/nsync_semaphore_mutex.cc"
+		${NSYNC_OS_CPP_SRC}
+	)
+else ()
+	set (NSYNC_POSIX ON)
+
+	set (NSYNC_OS_EXTRA_SRC
+		"platform/posix/src/nsync_semaphore_mutex.c"
+	)
+	set (NSYNC_OS_CPP_SRC
+		"platform/c++11/src/nsync_semaphore_mutex.cc"
+		${NSYNC_OS_CPP_SRC}
+	)
 endif ()
 
 # Pick the include directory for the compiler.
@@ -140,64 +147,10 @@ else ()
 	message (WARNING "CMAKE_C_COMPILER_ID (${CMAKE_C_COMPILER_ID}) matched NOTHING")
 endif ()
 
-if (NOT "${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
-	if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "WindowsX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/win32")
-		set (NSYNC_OS_SRC
-			${NSYNC_POSIX_SRC}
-			"platform/win32/src/clock_gettime.c"
-			"platform/win32/src/init_callback_win32.c"
-			"platform/win32/src/nanosleep.c"
-			"platform/win32/src/nsync_semaphore_win32.c"
-			"platform/win32/src/pthread_cond_timedwait_win32.c"
-			"platform/win32/src/pthread_key_win32.cc"
-		)
-		set (NSYNC_TEST_OS_SRC
-			"platform/win32/src/start_thread.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "DarwinX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/macos")
-		set (NSYNC_POSIX ON)
-		set (NSYNC_OS_EXTRA_SRC
-			"platform/posix/src/clock_gettime.c"
-			"platform/posix/src/nsync_semaphore_mutex.c"
-		)
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/linux")
-		set (NSYNC_POSIX ON)
-		set (NSYNC_OS_EXTRA_SRC
-		     "platform/linux/src/nsync_semaphore_futex.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "NetBSDX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/netbsd")
-		set (NSYNC_POSIX ON)
-		set (NSYNC_OS_EXTRA_SRC
-			"platform/posix/src/nsync_semaphore_mutex.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "FreeBSDX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/freebsd")
-		set (NSYNC_POSIX ON)
-		set (NSYNC_OS_EXTRA_SRC
-			"platform/posix/src/nsync_semaphore_mutex.c"
-		)
-	elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "OpenBSDX")
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/openbsd")
-		set (NSYNC_POSIX ON)
-		set (NSYNC_OS_EXTRA_SRC
-			"platform/posix/src/nsync_semaphore_mutex.c"
-		)
-	else ()
-		include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
-		set (NSYNC_POSIX ON)
-		set (NSYNC_OS_EXTRA_SRC
-			"platform/posix/src/nsync_semaphore_mutex.c"
-		)
-	endif ()
-endif ()
-
 if (NSYNC_POSIX)
 	include_directories ("${PROJECT_SOURCE_DIR}/platform/posix")
+	set (NSYNC_CPP_FLAGS "-std=c++11")
+
 	set (NSYNC_OS_SRC
 		${NSYNC_POSIX_SRC}
 		${NSYNC_OS_EXTRA_SRC}
@@ -281,6 +234,19 @@ add_library (nsync_cpp ${NSYNC_CPP_SRC_COPY})
 set_target_properties(nsync_cpp PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR})
+
+target_include_directories(nsync_cpp BEFORE PRIVATE
+	"${PROJECT_SOURCE_DIR}/platform/c++11"
+)
+
+if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
+	target_include_directories(nsync BEFORE PRIVATE
+		"${PROJECT_SOURCE_DIR}/platform/linux"
+	)
+	target_include_directories(nsync_cpp BEFORE PRIVATE
+		"${PROJECT_SOURCE_DIR}/platform/c++11.futex"
+	)
+endif ()
 
 target_compile_definitions(nsync_cpp PRIVATE ${NSYNC_CPP_DEFINITIONS})
 
