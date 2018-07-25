@@ -1,8 +1,12 @@
 cmake_minimum_required (VERSION 3.0)
 
+# fetch from VERSION file in root
+file(STRINGS VERSION VERSION_STRING)
+
 # nsync provides portable synchronization primitives, such as mutexes and
 # condition variables.
-project (nsync)
+project(nsync
+	VERSION ${VERSION_STRING})
 
 # Set variable NSYNC_LANGUAGE to "c++11" to build with C++11
 # rather than C.
