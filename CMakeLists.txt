@@ -259,6 +259,10 @@ set (NSYNC_SRC
 )
 add_library (nsync ${NSYNC_SRC})
 
+set_target_properties(nsync PROPERTIES
+	VERSION ${PROJECT_VERSION}
+	SOVERSION ${PROJECT_VERSION_MAJOR})
+
 if (NSYNC_ENABLE_TESTS)
 	set (NSYNC_TEST_SRC
 		"testing/array.c"
@@ -270,6 +274,9 @@ if (NSYNC_ENABLE_TESTS)
 		${NSYNC_TEST_OS_SRC}
 	)
 	add_library (nsync_test ${NSYNC_TEST_SRC})
+	set_target_properties(nsync_test PROPERTIES
+		VERSION ${PROJECT_VERSION}
+		SOVERSION ${PROJECT_VERSION_MAJOR})
 
 	set (NSYNC_TESTS
 		"counter_test"
