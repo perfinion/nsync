@@ -269,6 +269,32 @@ if (NSYNC_ENABLE_TESTS)
 		VERSION ${PROJECT_VERSION}
 		SOVERSION ${PROJECT_VERSION_MAJOR})
 
+	target_include_directories(nsync_test PUBLIC
+		"${PROJECT_SOURCE_DIR}/testing"
+	)
+
+	foreach (t IN ITEMS ${NSYNC_TEST_SRC})
+		add_custom_command (
+			OUTPUT cpp/${t}
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/${t} cpp/${t}
+			DEPENDS ${PROJECT_SOURCE_DIR}/${t}
+		)
+
+		set (NSYNC_TEST_CPP_SRC ${NSYNC_TEST_CPP_SRC}
+			cpp/${t}
+		)
+		SET_SOURCE_FILES_PROPERTIES (cpp/${t} PROPERTIES LANGUAGE CXX)
+	endforeach (t)
+
+	add_library (nsync_test_cpp ${NSYNC_TEST_CPP_SRC})
+	set_target_properties(nsync_test_cpp PROPERTIES
+		VERSION ${PROJECT_VERSION}
+		SOVERSION ${PROJECT_VERSION_MAJOR})
+
+	target_include_directories(nsync_test_cpp PUBLIC
+		"${PROJECT_SOURCE_DIR}/testing"
+	)
+
 	set (NSYNC_TESTS
 		"counter_test"
 		"cv_mu_timeout_stress_test"
@@ -285,16 +311,28 @@ if (NSYNC_ENABLE_TESTS)
 		"wait_test"
 	)
 
-	if ("${NSYNC_LANGUAGE}X" STREQUAL "c++11X")
-		SET_SOURCE_FILES_PROPERTIES (${NSYNC_TEST_SRC} PROPERTIES LANGUAGE CXX)
-		foreach (t IN ITEMS ${NSYNC_TESTS})
-			SET_SOURCE_FILES_PROPERTIES ("testing/${t}.c" PROPERTIES LANGUAGE CXX)
-		endforeach (t)
-	endif ()
-
 	enable_testing ()
+
 	foreach (t IN ITEMS ${NSYNC_TESTS})
 		add_executable (${t} "testing/${t}.c")
+		target_include_directories(${t} PUBLIC
+			"${PROJECT_SOURCE_DIR}/testing"
+		)
+
+		add_custom_command (
+			OUTPUT cpp/testing/${t}.c
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/testing/${t}.c cpp/testing/${t}.c
+			DEPENDS ${PROJECT_SOURCE_DIR}/testing/${t}.c
+		)
+
+		set (NSYNC_TEST_CPP_SRC ${NSYNC_TEST_CPP_SRC}
+			cpp/testing/${t}.c
+		)
+		SET_SOURCE_FILES_PROPERTIES (cpp/testing/${t} PROPERTIES LANGUAGE CXX)
+		add_executable (${t}_cpp "cpp/testing/${t}.c")
+		target_include_directories(${t}_cpp PUBLIC
+			"${PROJECT_SOURCE_DIR}/testing"
+		)
 	endforeach (t)
 
 	find_package (Threads REQUIRED)
@@ -302,15 +340,34 @@ if (NSYNC_ENABLE_TESTS)
 	foreach (t IN ITEMS "nsync" "nsync_test" ${NSYNC_TESTS})
 		if (THREADS_HAVE_PTHREAD_ARG)
 			target_compile_options (${t} PUBLIC "-pthread")
+			target_compile_options (${t}_cpp PUBLIC "-pthread")
 		endif ()
 		if (CMAKE_THREAD_LIBS_INIT)
 			target_link_libraries (${t} "${CMAKE_THREAD_LIBS_INIT}")
+			target_link_libraries (${t}_cpp "${CMAKE_THREAD_LIBS_INIT}")
+		endif ()
+
+		target_compile_definitions(${t}_cpp PRIVATE ${NSYNC_CPP_DEFINITIONS})
+
+		target_include_directories(${t}_cpp BEFORE PRIVATE
+			"${PROJECT_SOURCE_DIR}/platform/c++11"
+		)
+
+		if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
+			target_include_directories(${t} BEFORE PRIVATE
+				"${PROJECT_SOURCE_DIR}/platform/linux"
+			)
+			target_include_directories(${t}_cpp BEFORE PRIVATE
+				"${PROJECT_SOURCE_DIR}/platform/c++11.futex"
+			)
 		endif ()
 	endforeach (t)
 
 	foreach (t IN ITEMS ${NSYNC_TESTS})
 		target_link_libraries (${t} nsync_test nsync)
 		add_test (NAME ${t} COMMAND ${t})
+		target_link_libraries (${t}_cpp nsync_test_cpp nsync_cpp)
+		add_test (NAME ${t}_cpp COMMAND ${t}_cpp)
 	endforeach (t)
 endif ()
 
