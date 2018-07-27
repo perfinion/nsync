@@ -8,9 +8,6 @@ file(STRINGS VERSION VERSION_STRING)
 project(nsync
 	VERSION ${VERSION_STRING})
 
-# Set variable NSYNC_LANGUAGE to "c++11" to build with C++11
-# rather than C.
-
 # Some builds need position-independent code.
 set (CMAKE_POSITION_INDEPENDENT_CODE ON)
 
