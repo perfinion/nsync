@@ -1,49 +1,49 @@
 cmake_minimum_required (VERSION 3.0)
 
 # fetch from VERSION file in root
-file(STRINGS VERSION VERSION_STRING)
+file (STRINGS VERSION VERSION_STRING)
 
 # nsync provides portable synchronization primitives, such as mutexes and
 # condition variables.
-project(nsync
+project (nsync
 	VERSION "${VERSION_STRING}")
 
 # Some builds need position-independent code.
 set (CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Allow nsync users to turn the tests on or off.
-option(NSYNC_ENABLE_TESTS "Enable for building tests" ON)
+option (NSYNC_ENABLE_TESTS "Enable for building tests" ON)
 
 # -----------------------------------------------------------------
 # Functions to set common options on targets and files.
 # Should be called on all targets.
-function(set_c_target tgtname files)
-	if("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
-		target_include_directories("${tgtname}" BEFORE PRIVATE
+function (set_c_target tgtname files)
+	if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
+		target_include_directories ("${tgtname}" BEFORE PRIVATE
 			"${PROJECT_SOURCE_DIR}/platform/linux"
 		)
-	endif()
-endfunction(set_c_target)
+	endif ()
+endfunction (set_c_target)
 
-function(set_cpp_target tgtname files)
-	target_include_directories("${tgtname}" BEFORE PRIVATE
+function (set_cpp_target tgtname files)
+	target_include_directories ("${tgtname}" BEFORE PRIVATE
 		"${PROJECT_SOURCE_DIR}/platform/c++11"
 	)
 
-	if("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
-		target_include_directories("${tgtname}" BEFORE PRIVATE
+	if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "LinuxX")
+		target_include_directories ("${tgtname}" BEFORE PRIVATE
 			"${PROJECT_SOURCE_DIR}/platform/c++11.futex"
 		)
-	endif()
+	endif ()
 
-	target_compile_definitions("${tgtname}" PRIVATE "${NSYNC_CPP_DEFINITIONS}")
+	target_compile_definitions ("${tgtname}" PRIVATE "${NSYNC_CPP_DEFINITIONS}")
 
 	foreach (s IN ITEMS ${files})
-		set_source_files_properties("${s}"
+		set_source_files_properties ("${s}"
 			PROPERTIES LANGUAGE CXX
 			COMPILE_FLAGS "${NSYNC_CPP_FLAGS}")
 	endforeach (s)
-endfunction(set_cpp_target)
+endfunction (set_cpp_target)
 
 # -----------------------------------------------------------------
 # Platform dependencies
@@ -229,7 +229,7 @@ endif ()
 include_directories ("${PROJECT_SOURCE_DIR}/public")
 include_directories ("${PROJECT_SOURCE_DIR}/internal")
 
-include(GNUInstallDirs)
+include (GNUInstallDirs)
 
 set (NSYNC_COMMON_SRC
 	"internal/common.c"
@@ -247,11 +247,11 @@ set (NSYNC_COMMON_SRC
 )
 
 add_library (nsync ${NSYNC_COMMON_SRC} ${NSYNC_OS_SRC})
-set_target_properties(nsync PROPERTIES
+set_target_properties (nsync PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR})
 
-set_c_target(nsync "${NSYNC_COMMON_SRC} ${NSYNC_OS_SRC}")
+set_c_target (nsync "${NSYNC_COMMON_SRC} ${NSYNC_OS_SRC}")
 
 foreach (s IN ITEMS ${NSYNC_COMMON_SRC} ${NSYNC_OS_CPP_SRC})
 	# The C and C++ libraries are built from the same source files but
@@ -259,7 +259,7 @@ foreach (s IN ITEMS ${NSYNC_COMMON_SRC} ${NSYNC_OS_CPP_SRC})
 	# the filetype based on the extension so we need to override LANGUAGE
 	# manually. A custom command first copies the source files (only if
 	# changed) so the LANGUAGE property does not conflict.
-	add_custom_command(
+	add_custom_command (
 		OUTPUT cpp/${s}
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/${s} cpp/${s}
 		DEPENDS ${PROJECT_SOURCE_DIR}/${s}
@@ -271,11 +271,11 @@ foreach (s IN ITEMS ${NSYNC_COMMON_SRC} ${NSYNC_OS_CPP_SRC})
 endforeach (s)
 
 add_library (nsync_cpp ${NSYNC_CPP_SRC_COPY})
-set_target_properties(nsync_cpp PROPERTIES
+set_target_properties (nsync_cpp PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR})
 
-set_cpp_target(nsync_cpp "${NSYNC_CPP_SRC_COPY}")
+set_cpp_target (nsync_cpp "${NSYNC_CPP_SRC_COPY}")
 
 
 if (NSYNC_ENABLE_TESTS)
@@ -289,12 +289,12 @@ if (NSYNC_ENABLE_TESTS)
 		${NSYNC_TEST_OS_SRC}
 	)
 	add_library (nsync_test ${NSYNC_TEST_SRC})
-	set_target_properties(nsync_test PROPERTIES
+	set_target_properties (nsync_test PROPERTIES
 		VERSION ${PROJECT_VERSION}
 		SOVERSION ${PROJECT_VERSION_MAJOR})
 
-	set_c_target(nsync_test "${NSYNC_TEST_SRC}")
-	target_include_directories(nsync_test PUBLIC
+	set_c_target (nsync_test "${NSYNC_TEST_SRC}")
+	target_include_directories (nsync_test PUBLIC
 		"${PROJECT_SOURCE_DIR}/testing"
 	)
 
@@ -311,12 +311,12 @@ if (NSYNC_ENABLE_TESTS)
 	endforeach (t)
 
 	add_library (nsync_test_cpp ${NSYNC_TEST_CPP_SRC})
-	set_target_properties(nsync_test_cpp PROPERTIES
+	set_target_properties (nsync_test_cpp PROPERTIES
 		VERSION ${PROJECT_VERSION}
 		SOVERSION ${PROJECT_VERSION_MAJOR})
 
-	set_cpp_target(nsync_test_cpp "${NSYNC_TEST_CPP_SRC}")
-	target_include_directories(nsync_test_cpp PUBLIC
+	set_cpp_target (nsync_test_cpp "${NSYNC_TEST_CPP_SRC}")
+	target_include_directories (nsync_test_cpp PUBLIC
 		"${PROJECT_SOURCE_DIR}/testing"
 	)
 
@@ -340,8 +340,8 @@ if (NSYNC_ENABLE_TESTS)
 
 	foreach (t IN ITEMS ${NSYNC_TESTS})
 		add_executable (${t} "testing/${t}.c")
-		set_c_target(${t} "testing/${t}.c")
-		target_include_directories(${t} PUBLIC
+		set_c_target (${t} "testing/${t}.c")
+		target_include_directories (${t} PUBLIC
 			"${PROJECT_SOURCE_DIR}/testing"
 		)
 		target_link_libraries (${t} nsync_test nsync)
@@ -357,8 +357,8 @@ if (NSYNC_ENABLE_TESTS)
 			cpp/testing/${t}.c
 		)
 		add_executable (${t}_cpp "cpp/testing/${t}.c")
-		set_cpp_target(${t}_cpp "cpp/testing/${t}.c")
-		target_include_directories(${t}_cpp PUBLIC
+		set_cpp_target (${t}_cpp "cpp/testing/${t}.c")
+		target_include_directories (${t}_cpp PUBLIC
 			"${PROJECT_SOURCE_DIR}/testing"
 		)
 		target_link_libraries (${t}_cpp nsync_test_cpp nsync_cpp)
