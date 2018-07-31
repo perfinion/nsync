@@ -320,6 +320,7 @@ if (NSYNC_ENABLE_TESTS)
 		"${PROJECT_SOURCE_DIR}/testing"
 	)
 
+	# Test names should not end with _cpp
 	set (NSYNC_TESTS
 		"counter_test"
 		"cv_mu_timeout_stress_test"
@@ -338,6 +339,10 @@ if (NSYNC_ENABLE_TESTS)
 
 	enable_testing ()
 
+	# Test targets to only run C or C++ tests
+	add_custom_target(test_c COMMAND ${CMAKE_CTEST_COMMAND} -E '_cpp$$')
+	add_custom_target(test_cpp COMMAND ${CMAKE_CTEST_COMMAND} -R '_cpp$$')
+
 	foreach (t IN ITEMS ${NSYNC_TESTS})
 		add_executable (${t} "testing/${t}.c")
 		set_c_target (${t} "testing/${t}.c")
@@ -346,6 +351,7 @@ if (NSYNC_ENABLE_TESTS)
 		)
 		target_link_libraries (${t} nsync_test nsync)
 		add_test (NAME ${t} COMMAND ${t})
+		add_dependencies (test_c ${t})
 
 		add_custom_command (
 			OUTPUT cpp/testing/${t}.c
@@ -363,6 +369,7 @@ if (NSYNC_ENABLE_TESTS)
 		)
 		target_link_libraries (${t}_cpp nsync_test_cpp nsync_cpp)
 		add_test (NAME ${t}_cpp COMMAND ${t}_cpp)
+		add_dependencies (test_cpp ${t}_cpp)
 	endforeach (t)
 
 	find_package (Threads REQUIRED)
