@@ -1,12 +1,18 @@
-cmake_minimum_required (VERSION 3.0)
-
-# fetch from VERSION file in root
-file (STRINGS VERSION VERSION_STRING)
+cmake_minimum_required (VERSION 2.8)
 
 # nsync provides portable synchronization primitives, such as mutexes and
 # condition variables.
-project (nsync
-	VERSION "${VERSION_STRING}")
+if ("${CMAKE_MAJOR_VERSION}X" STREQUAL "2X")
+	project (nsync)
+else ()
+	# fetch from VERSION file in root
+	file (STRINGS VERSION VERSION_STRING)
+
+	cmake_policy(SET CMP0048 NEW)
+
+	project (nsync
+		VERSION "${VERSION_STRING}")
+endif ()
 
 # Some builds need position-independent code.
 set (CMAKE_POSITION_INDEPENDENT_CODE ON)
