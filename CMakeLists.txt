@@ -91,13 +91,15 @@ if ("${CMAKE_SYSTEM_NAME}X" STREQUAL "WindowsX")
 		"platform/win32/src/clock_gettime.c"
 		"platform/win32/src/pthread_key_win32.cc"
 	)
+	set (NSYNC_TEST_OS_SRC
+		"platform/win32/src/start_thread.c"
+	)
 
 	# Suppress warnings to reduce build log size.
-	add_definitions (/wd4267 /wd4244 /wd4800 /wd4503 /wd4554 /wd4996 /wd4348 /wd4018)
-	add_definitions (/wd4099 /wd4146 /wd4267 /wd4305 /wd4307)
-	add_definitions (/wd4715 /wd4722 /wd4723 /wd4838 /wd4309 /wd4334)
-	add_definitions (/wd4003 /wd4244 /wd4267 /wd4503 /wd4506 /wd4800 /wd4996)
-	add_definitions (/wd8029)
+	add_definitions (/wd4057 /wd4100 /wd4152 /wd4242 /wd4244 /wd4255 /wd4267)
+	add_definitions (/wd4365 /wd4389 /wd4458 /wd4571 /wd4625 /wd4626 /wd4668)
+	add_definitions (/wd4702 /wd4710 /wd4774 /wd4820 /wd5026 /wd5027 /wd5039)
+	add_definitions (/wd5045)
 elseif ("${CMAKE_SYSTEM_NAME}X" STREQUAL "DarwinX")
 	include_directories ("${PROJECT_SOURCE_DIR}/platform/macos")
 	# Some versions of MacOS, such as Sierra, require _DARWIN_C_SOURCE
